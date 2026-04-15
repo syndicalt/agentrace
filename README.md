@@ -4,12 +4,6 @@ Visual debugging, execution traces, and observability for AI agents.
 
 When your AI agent makes a bad decision at step 7 of a 12-step workflow, Pathlight shows you exactly what happened — what went in, what came out, how long it took, and where in your code it was called. No more debugging agents with `console.log`.
 
-![Trace List](public/trace_list.png)
-
-![Waterfall Timeline](public/trace_detail.png)
-
-![Span Inspector](public/execution_detail.png)
-
 ## Features
 
 - **Waterfall Timeline** — See every step of your agent's execution as a visual timeline with proportional duration bars. LLM calls, tool invocations, retrieval steps — all in one view.
