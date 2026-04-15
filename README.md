@@ -1,8 +1,8 @@
-# TraceLens
+# Agentrace
 
 Chrome DevTools for AI agents. Visual debugging, execution traces, and observability for agentic AI systems.
 
-When your AI agent makes a bad decision at step 7 of a 12-step workflow, TraceLens shows you exactly what happened — what went in, what came out, how long it took, and where in your code it was called. No more debugging agents with `console.log`.
+When your AI agent makes a bad decision at step 7 of a 12-step workflow, Agentrace shows you exactly what happened — what went in, what came out, how long it took, and where in your code it was called. No more debugging agents with `console.log`.
 
 ## Features
 
@@ -16,8 +16,8 @@ When your AI agent makes a bad decision at step 7 of a 12-step workflow, TraceLe
 ## Quick Start
 
 ```bash
-git clone https://github.com/syndicalt/tracelens.git
-cd tracelens
+git clone https://github.com/syndicalt/agentrace.git
+cd agentrace
 
 npm install
 
@@ -37,13 +37,13 @@ npx turbo dev
 Add a few lines to your agent code. The SDK handles the rest.
 
 ```bash
-npm install @tracelens/sdk
+npm install @agentrace/sdk
 ```
 
 ```typescript
-import { TraceLens } from "@tracelens/sdk";
+import { Agentrace } from "@agentrace/sdk";
 
-const tl = new TraceLens({
+const tl = new Agentrace({
   baseUrl: "http://localhost:4100",
 });
 
@@ -111,7 +111,7 @@ Click any span to open the slide-in panel showing:
 ## Architecture
 
 ```
-tracelens/
+agentrace/
 ├── packages/
 │   ├── collector/    # Hono-based API (port 4100)
 │   │   └── src/
@@ -122,7 +122,7 @@ tracelens/
 │   │       └── schema.ts  # traces, spans, events, projects, scores
 │   └── sdk/          # TypeScript SDK
 │       └── src/
-│           └── index.ts   # TraceLens, Trace, Span classes
+│           └── index.ts   # Agentrace, Trace, Span classes
 └── apps/
     └── web/          # Next.js + Tailwind dashboard (port 3100)
         └── src/app/
@@ -158,10 +158,10 @@ tracelens/
 
 ## SDK Reference
 
-### `TraceLens`
+### `Agentrace`
 
 ```typescript
-const tl = new TraceLens({
+const tl = new Agentrace({
   baseUrl: "http://localhost:4100",  // Collector URL
   projectId: "my-project",           // Optional project grouping
   apiKey: "tl_...",                   // Optional authentication
@@ -212,7 +212,7 @@ Source location (file, line, function) is captured automatically when a span is 
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DATABASE_URL` | `file:tracelens.db` | SQLite or Turso connection URL |
+| `DATABASE_URL` | `file:agentrace.db` | SQLite or Turso connection URL |
 | `DATABASE_AUTH_TOKEN` | — | Turso auth token (if using Turso) |
 | `PORT` | `4100` | Collector port |
 | `DASHBOARD_URL` | `http://localhost:3100` | Dashboard URL (for CORS) |

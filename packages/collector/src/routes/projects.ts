@@ -1,7 +1,7 @@
 import { Hono } from "hono";
-import type { Db } from "@tracelens/db";
-import { projects } from "@tracelens/db";
-import { eq } from "@tracelens/db";
+import type { Db } from "@agentrace/db";
+import { projects } from "@agentrace/db";
+import { eq } from "@agentrace/db";
 import { nanoid } from "nanoid";
 import { randomBytes } from "node:crypto";
 

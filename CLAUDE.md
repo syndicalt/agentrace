@@ -1,4 +1,4 @@
-# TraceLens
+# Agentrace
 
 Chrome DevTools for AI agents. Visual debugging, execution traces, and observability for agentic AI systems.
 
@@ -35,9 +35,9 @@ npm run db:studio -w packages/db     # Open Drizzle Studio
 ## SDK Usage
 
 ```typescript
-import { TraceLens } from "@tracelens/sdk";
+import { Agentrace } from "@agentrace/sdk";
 
-const tl = new TraceLens({ baseUrl: "http://localhost:4100" });
+const tl = new Agentrace({ baseUrl: "http://localhost:4100" });
 
 const trace = tl.trace("my-agent", { query: "..." });
 const span = trace.span("llm.chat", "llm", { model: "gpt-4o" });

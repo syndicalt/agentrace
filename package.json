@@ -1,5 +1,5 @@
 {
-  "name": "tracelens",
+  "name": "agentrace",
   "version": "0.1.0",
   "private": true,
   "description": "Chrome DevTools for AI agents — visual debugging, execution traces, and observability",

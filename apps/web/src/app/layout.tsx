@@ -3,7 +3,7 @@ import Link from "next/link";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "TraceLens",
+  title: "Agentrace",
   description: "Chrome DevTools for AI agents",
 };
 
@@ -12,7 +12,7 @@ function Sidebar() {
     <aside className="fixed top-0 left-0 h-screen w-52 bg-zinc-950 border-r border-zinc-800 flex flex-col z-50">
       <div className="h-14 flex items-center px-5 border-b border-zinc-800">
         <Link href="/" className="text-lg font-bold tracking-tight">
-          <span className="text-blue-400">Trace</span>Lens
+          <span className="text-blue-400">Agent</span>race
         </Link>
       </div>
       <nav className="flex-1 px-3 py-4 space-y-1">
@@ -27,7 +27,7 @@ function Sidebar() {
         </Link>
       </nav>
       <div className="border-t border-zinc-800 px-4 py-3">
-        <p className="text-[10px] text-zinc-600">TraceLens v0.1.0</p>
+        <p className="text-[10px] text-zinc-600">agentrace v0.1.0</p>
       </div>
     </aside>
   );

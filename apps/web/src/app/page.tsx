@@ -71,7 +71,7 @@ export default function TracesPage() {
       ) : filtered.length === 0 ? (
         <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-12 text-center">
           <p className="text-zinc-400">No traces yet.</p>
-          <p className="text-sm text-zinc-600 mt-1">Instrument your agent with the TraceLens SDK to start capturing traces.</p>
+          <p className="text-sm text-zinc-600 mt-1">Instrument your agent with the Agentrace SDK to start capturing traces.</p>
         </div>
       ) : (
         <div className="space-y-2">

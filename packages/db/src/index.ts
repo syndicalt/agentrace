@@ -11,7 +11,7 @@ export type Db = ReturnType<typeof drizzle>;
 
 export function createDb(url?: string, authToken?: string) {
   const client = createClient({
-    url: url || process.env.DATABASE_URL || "file:tracelens.db",
+    url: url || process.env.DATABASE_URL || "file:agentrace.db",
     authToken: authToken || process.env.DATABASE_AUTH_TOKEN,
   });
   return drizzle(client);

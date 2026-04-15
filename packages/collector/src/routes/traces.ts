@@ -1,7 +1,7 @@
 import { Hono } from "hono";
-import type { Db } from "@tracelens/db";
-import { traces, spans, events, scores } from "@tracelens/db";
-import { eq, desc, sql, and, gte, lte, like } from "@tracelens/db";
+import type { Db } from "@agentrace/db";
+import { traces, spans, events, scores } from "@agentrace/db";
+import { eq, desc, sql, and, gte, lte, like } from "@agentrace/db";
 import { nanoid } from "nanoid";
 
 export function createTraceRoutes(db: Db) {

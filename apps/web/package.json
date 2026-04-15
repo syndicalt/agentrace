@@ -1,5 +1,5 @@
 {
-  "name": "@tracelens/web",
+  "name": "@agentrace/web",
   "version": "0.1.0",
   "private": true,
   "scripts": {

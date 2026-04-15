@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import type { Db } from "@tracelens/db";
+import type { Db } from "@agentrace/db";
 import { createTraceRoutes } from "./routes/traces.js";
 import { createSpanRoutes } from "./routes/spans.js";
 import { createProjectRoutes } from "./routes/projects.js";
@@ -25,7 +25,7 @@ export async function createRouter(ctx: RouterContext) {
   app.route("/v1/projects", createProjectRoutes(ctx.db));
 
   // Health check
-  app.get("/health", (c) => c.json({ status: "ok", service: "tracelens-collector" }));
+  app.get("/health", (c) => c.json({ status: "ok", service: "agentrace-collector" }));
 
   return app;
 }
