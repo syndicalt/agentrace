@@ -1,5 +1,5 @@
 {
-  "name": "agentrace",
+  "name": "pathlight",
   "version": "0.1.0",
   "private": true,
   "description": "Visual debugging, execution traces, and observability for AI agents",

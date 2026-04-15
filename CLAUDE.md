@@ -1,4 +1,4 @@
-# Agentrace
+# Pathlight
 
 Visual debugging, execution traces, and observability for AI agents.
 
@@ -35,9 +35,9 @@ npm run db:studio -w packages/db     # Open Drizzle Studio
 ## SDK Usage
 
 ```typescript
-import { Agentrace } from "@agentrace/sdk";
+import { Pathlight } from "@pathlight/sdk";
 
-const tl = new Agentrace({ baseUrl: "http://localhost:4100" });
+const tl = new Pathlight({ baseUrl: "http://localhost:4100" });
 
 const trace = tl.trace("my-agent", { query: "..." });
 const span = trace.span("llm.chat", "llm", { model: "gpt-4o" });

@@ -1,8 +1,8 @@
-# Agentrace
+# Pathlight
 
 Visual debugging, execution traces, and observability for AI agents.
 
-When your AI agent makes a bad decision at step 7 of a 12-step workflow, Agentrace shows you exactly what happened — what went in, what came out, how long it took, and where in your code it was called. No more debugging agents with `console.log`.
+When your AI agent makes a bad decision at step 7 of a 12-step workflow, Pathlight shows you exactly what happened — what went in, what came out, how long it took, and where in your code it was called. No more debugging agents with `console.log`.
 
 ![Trace List](public/trace_list.png)
 
@@ -22,8 +22,8 @@ When your AI agent makes a bad decision at step 7 of a 12-step workflow, Agentra
 ## Quick Start
 
 ```bash
-git clone https://github.com/syndicalt/agentrace.git
-cd agentrace
+git clone https://github.com/syndicalt/pathlight.git
+cd pathlight
 
 npm install
 
@@ -43,13 +43,13 @@ npx turbo dev
 Add a few lines to your agent code. The SDK handles the rest.
 
 ```bash
-npm install @agentrace/sdk
+npm install @pathlight/sdk
 ```
 
 ```typescript
-import { Agentrace } from "@agentrace/sdk";
+import { Pathlight } from "@pathlight/sdk";
 
-const tl = new Agentrace({
+const tl = new Pathlight({
   baseUrl: "http://localhost:4100",
 });
 
@@ -123,7 +123,7 @@ Click any span to open the slide-in panel showing:
 ## Architecture
 
 ```
-agentrace/
+pathlight/
 ├── packages/
 │   ├── collector/    # Hono-based API (port 4100)
 │   │   └── src/
@@ -134,7 +134,7 @@ agentrace/
 │   │       └── schema.ts  # traces, spans, events, projects, scores
 │   └── sdk/          # TypeScript SDK
 │       └── src/
-│           └── index.ts   # Agentrace, Trace, Span classes
+│           └── index.ts   # Pathlight, Trace, Span classes
 └── apps/
     └── web/          # Next.js + Tailwind dashboard (port 3100)
         └── src/app/
@@ -170,10 +170,10 @@ agentrace/
 
 ## SDK Reference
 
-### `Agentrace`
+### `Pathlight`
 
 ```typescript
-const tl = new Agentrace({
+const tl = new Pathlight({
   baseUrl: "http://localhost:4100",  // Collector URL
   projectId: "my-project",           // Optional project grouping
   apiKey: "tl_...",                   // Optional authentication
@@ -224,7 +224,7 @@ Source location (file, line, function) is captured automatically when a span is 
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DATABASE_URL` | `file:agentrace.db` | SQLite or Turso connection URL |
+| `DATABASE_URL` | `file:pathlight.db` | SQLite or Turso connection URL |
 | `DATABASE_AUTH_TOKEN` | — | Turso auth token (if using Turso) |
 | `PORT` | `4100` | Collector port |
 | `DASHBOARD_URL` | `http://localhost:3100` | Dashboard URL (for CORS) |

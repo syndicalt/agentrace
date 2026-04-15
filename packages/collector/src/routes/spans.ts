@@ -1,7 +1,7 @@
 import { Hono } from "hono";
-import type { Db } from "@agentrace/db";
-import { spans, events } from "@agentrace/db";
-import { eq } from "@agentrace/db";
+import type { Db } from "@pathlight/db";
+import { spans, events } from "@pathlight/db";
+import { eq } from "@pathlight/db";
 import { nanoid } from "nanoid";
 
 export function createSpanRoutes(db: Db) {

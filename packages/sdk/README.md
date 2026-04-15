@@ -1,21 +1,21 @@
-# @agentrace/sdk
+# @pathlight/sdk
 
-TypeScript SDK for [Agentrace](https://github.com/syndicalt/agentrace) — visual debugging and observability for AI agents.
+TypeScript SDK for [Pathlight](https://github.com/syndicalt/pathlight) — visual debugging and observability for AI agents.
 
 Instrument your AI agent with a few lines of code to capture full execution traces with visual debugging, waterfall timelines, and automatic source mapping.
 
 ## Install
 
 ```bash
-npm install @agentrace/sdk
+npm install @pathlight/sdk
 ```
 
 ## Quick Start
 
 ```typescript
-import { Agentrace } from "@agentrace/sdk";
+import { Pathlight } from "@pathlight/sdk";
 
-const ag = new Agentrace({
+const ag = new Pathlight({
   baseUrl: "http://localhost:4100",
 });
 
@@ -64,7 +64,7 @@ Open `http://localhost:3100` to see the visual trace.
 
 ## API
 
-See the full [Agentrace documentation](https://github.com/syndicalt/agentrace) for the collector setup and dashboard.
+See the full [Pathlight documentation](https://github.com/syndicalt/pathlight) for the collector setup and dashboard.
 
 ## License
 

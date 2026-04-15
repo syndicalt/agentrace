@@ -1,7 +1,7 @@
 import { Hono } from "hono";
-import type { Db } from "@agentrace/db";
-import { projects } from "@agentrace/db";
-import { eq } from "@agentrace/db";
+import type { Db } from "@pathlight/db";
+import { projects } from "@pathlight/db";
+import { eq } from "@pathlight/db";
 import { nanoid } from "nanoid";
 import { randomBytes } from "node:crypto";
 

@@ -1,5 +1,5 @@
 {
-  "name": "@agentrace/collector",
+  "name": "@pathlight/collector",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.13.0",
-    "@agentrace/db": "*",
+    "@pathlight/db": "*",
     "dotenv": "^16.4.0",
     "hono": "^4.7.0",
     "nanoid": "^5.0.0"

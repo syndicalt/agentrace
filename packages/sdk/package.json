@@ -1,7 +1,7 @@
 {
-  "name": "@agentrace/sdk",
+  "name": "@pathlight/sdk",
   "version": "0.1.0",
-  "description": "SDK for Agentrace — visual debugging and observability for AI agents",
+  "description": "SDK for Pathlight — visual debugging and observability for AI agents",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -34,10 +34,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/syndicalt/agentrace.git",
+    "url": "https://github.com/syndicalt/pathlight.git",
     "directory": "packages/sdk"
   },
-  "homepage": "https://github.com/syndicalt/agentrace",
+  "homepage": "https://github.com/syndicalt/pathlight",
   "dependencies": {},
   "devDependencies": {
     "typescript": "^5.7.0"

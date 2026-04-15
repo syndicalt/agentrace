@@ -1,10 +1,10 @@
 /**
- * Agentrace TypeScript SDK
+ * Pathlight TypeScript SDK
  *
  * Usage:
- *   import { Agentrace } from "@agentrace/sdk";
+ *   import { Pathlight } from "@pathlight/sdk";
  *
- *   const tl = new Agentrace({
+ *   const tl = new Pathlight({
  *     baseUrl: "http://localhost:4100",
  *     projectId: "my-project",
  *   });
@@ -25,7 +25,7 @@ function captureSource(): { file: string; line: number; column: number; func: st
   for (let i = 1; i < stack.length; i++) {
     const frame = stack[i].trim();
     // Skip frames from this SDK file
-    if (frame.includes("/sdk/") || frame.includes("@agentrace/sdk")) continue;
+    if (frame.includes("/sdk/") || frame.includes("@pathlight/sdk")) continue;
     if (frame.includes("node:") || frame.includes("node_modules")) continue;
 
     // Parse "at functionName (file:line:col)" or "at file:line:col"
@@ -42,18 +42,18 @@ function captureSource(): { file: string; line: number; column: number; func: st
   return null;
 }
 
-interface AgentraceConfig {
+interface PathlightConfig {
   baseUrl: string;
   projectId?: string;
   apiKey?: string;
 }
 
-export class Agentrace {
+export class Pathlight {
   private baseUrl: string;
   private projectId?: string;
   private apiKey?: string;
 
-  constructor(config: AgentraceConfig) {
+  constructor(config: PathlightConfig) {
     this.baseUrl = config.baseUrl.replace(/\/$/, "");
     this.projectId = config.projectId;
     this.apiKey = config.apiKey;
@@ -114,7 +114,7 @@ export class Agentrace {
 }
 
 export class Trace {
-  private client: Agentrace;
+  private client: Pathlight;
   private _id: string | null = null;
   private _name: string;
   private _input?: unknown;
@@ -124,7 +124,7 @@ export class Trace {
   private _totalCost = 0;
   private _initPromise: Promise<void>;
 
-  constructor(client: Agentrace, name: string, input?: unknown, options?: { tags?: string[]; metadata?: unknown }) {
+  constructor(client: Pathlight, name: string, input?: unknown, options?: { tags?: string[]; metadata?: unknown }) {
     this.client = client;
     this._name = name;
     this._input = input;
@@ -180,7 +180,7 @@ export class Trace {
 }
 
 export class Span {
-  private client: Agentrace;
+  private client: Pathlight;
   private trace: Trace;
   private _id: string | null = null;
   private _startTime = Date.now();
@@ -189,7 +189,7 @@ export class Span {
   private _source: ReturnType<typeof captureSource>;
 
   constructor(
-    client: Agentrace,
+    client: Pathlight,
     trace: Trace,
     name: string,
     type: "llm" | "tool" | "retrieval" | "agent" | "chain" | "custom",
