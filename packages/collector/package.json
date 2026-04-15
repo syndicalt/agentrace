@@ -1,0 +1,21 @@
+{
+  "name": "@tracelens/collector",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.13.0",
+    "@tracelens/db": "*",
+    "hono": "^4.7.0",
+    "nanoid": "^5.0.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

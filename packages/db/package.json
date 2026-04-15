@@ -1,0 +1,21 @@
+{
+  "name": "@tracelens/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.15.0",
+    "drizzle-orm": "^0.39.0"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.0",
+    "typescript": "^5.7.0"
+  }
+}
