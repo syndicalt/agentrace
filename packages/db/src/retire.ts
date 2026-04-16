@@ -5,8 +5,9 @@ import { resolve } from "node:path";
 
 const args = process.argv.slice(2);
 const shouldDelete = args.includes("--delete");
+const positional = args.filter((a) => !a.startsWith("--"));
 
-const raw = process.env.DATABASE_URL || "file:pathlight.db";
+const raw = positional[0] || process.env.DATABASE_URL || "file:pathlight.db";
 const filePath = raw.startsWith("file:") ? raw.slice(5) : raw;
 
 if (filePath.startsWith("libsql://") || filePath.startsWith("http")) {

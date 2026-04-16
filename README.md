@@ -29,10 +29,10 @@ npm run db:migrate -w packages/db
 npx turbo dev
 
 # Archive database to start fresh (renames to .archived-<timestamp>.db)
-npm run db:retire -w packages/db
+npm run db:retire -w packages/db -- ../collector/pathlight.db
 
 # Or permanently delete it
-npm run db:retire -w packages/db -- --delete
+npm run db:retire -w packages/db -- --delete ../collector/pathlight.db
 ```
 
 - **Collector**: http://localhost:4100 (receives trace data from your agent)
