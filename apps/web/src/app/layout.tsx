@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
+import { BreakpointsPanel } from "../components/BreakpointsPanel";
 
 export const metadata: Metadata = {
   title: "Pathlight",
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Sidebar />
           <main className="flex-1 ml-52">{children}</main>
         </div>
+        <BreakpointsPanel />
       </body>
     </html>
   );
