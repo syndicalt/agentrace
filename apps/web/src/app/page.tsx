@@ -124,11 +124,12 @@ export default function TracesPage() {
               inputPreview = (trace.input || "").slice(0, 100);
             }
 
+            const unreviewed = !trace.reviewedAt;
             return (
               <Link
                 key={trace.id}
                 href={`/traces/${trace.id}`}
-                className="block bg-zinc-900 border border-zinc-800 rounded-lg px-5 py-4 hover:border-zinc-700 transition-colors"
+                className={`block bg-zinc-900 border border-zinc-800 border-l-2 rounded-lg px-5 py-4 hover:border-zinc-700 transition-colors ${unreviewed ? "border-l-sky-500/40" : "border-l-zinc-800"}`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 min-w-0">
