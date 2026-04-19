@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { fetchApi, COLLECTOR_URL } from "../lib/api";
 import { formatDuration, formatTokens, formatTimestamp } from "../lib/format";
 
@@ -28,10 +29,26 @@ const STATUS_STYLES: Record<string, { dot: string; text: string }> = {
 };
 
 export default function TracesPage() {
+  const router = useRouter();
   const [traces, setTraces] = useState<Trace[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
+  const [selected, setSelected] = useState<string[]>([]);
+
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      if (prev.includes(id)) return prev.filter((x) => x !== id);
+      if (prev.length >= 2) return [prev[1], id];
+      return [...prev, id];
+    });
+  };
+
+  const compareSelected = () => {
+    if (selected.length === 2) {
+      router.push(`/traces/compare?a=${selected[0]}&b=${selected[1]}`);
+    }
+  };
 
   useEffect(() => {
     fetchApi<{ traces: Trace[]; total: number }>("/v1/traces?limit=50")
@@ -131,14 +148,35 @@ export default function TracesPage() {
             }
 
             const unreviewed = !trace.reviewedAt;
+            const isSelected = selected.includes(trace.id);
             return (
               <Link
                 key={trace.id}
                 href={`/traces/${trace.id}`}
-                className={`block bg-zinc-900 border border-zinc-800 border-l-2 rounded-lg px-5 py-4 hover:border-zinc-700 transition-colors ${unreviewed ? "border-l-sky-500/40" : "border-l-zinc-800"}`}
+                className={`group block bg-zinc-900 border border-zinc-800 border-l-2 rounded-lg px-5 py-4 hover:border-zinc-700 transition-colors ${unreviewed ? "border-l-sky-500/40" : "border-l-zinc-800"} ${isSelected ? "ring-1 ring-blue-500/60" : ""}`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 min-w-0">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleSelect(trace.id);
+                      }}
+                      aria-label={isSelected ? "Deselect for compare" : "Select for compare"}
+                      className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center transition ${
+                        isSelected
+                          ? "bg-blue-500 border-blue-400 text-white"
+                          : "border-zinc-700 hover:border-zinc-500 opacity-0 group-hover:opacity-100"
+                      } ${selected.length > 0 ? "opacity-100" : ""}`}
+                    >
+                      {isSelected && (
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </button>
                     <div className={`w-2 h-2 rounded-full shrink-0 ${style.dot}`} />
                     <span className="font-medium text-sm">{trace.name}</span>
                     <span className={`text-xs ${style.text}`}>{trace.status}</span>
@@ -163,11 +201,32 @@ export default function TracesPage() {
                   </div>
                 </div>
                 {inputPreview && (
-                  <p className="text-xs text-zinc-600 mt-2 truncate ml-5">{inputPreview}</p>
+                  <p className="text-xs text-zinc-600 mt-2 truncate ml-11">{inputPreview}</p>
                 )}
               </Link>
             );
           })}
+        </div>
+      )}
+
+      {selected.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-zinc-900 border border-zinc-700 rounded-full shadow-2xl px-4 py-2 flex items-center gap-3 z-50">
+          <span className="text-xs text-zinc-400">
+            {selected.length} selected {selected.length === 2 ? "" : "— pick one more to compare"}
+          </span>
+          <button
+            onClick={() => setSelected([])}
+            className="text-xs text-zinc-500 hover:text-zinc-300"
+          >
+            Clear
+          </button>
+          <button
+            onClick={compareSelected}
+            disabled={selected.length !== 2}
+            className="text-xs px-3 py-1.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-medium disabled:bg-zinc-700 disabled:text-zinc-500 disabled:cursor-not-allowed transition-colors"
+          >
+            Compare →
+          </button>
         </div>
       )}
     </div>
