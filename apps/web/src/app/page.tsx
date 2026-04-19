@@ -119,7 +119,13 @@ export default function TracesPage() {
             let inputPreview = "";
             try {
               const parsed = JSON.parse(trace.input || "{}");
-              inputPreview = typeof parsed === "string" ? parsed : Object.values(parsed).join(" ").slice(0, 100);
+              inputPreview =
+                typeof parsed === "string"
+                  ? parsed
+                  : Object.values(parsed)
+                      .map((v) => (typeof v === "string" ? v : JSON.stringify(v)))
+                      .join(" ")
+                      .slice(0, 100);
             } catch {
               inputPreview = (trace.input || "").slice(0, 100);
             }
