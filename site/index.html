@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pathlight — a debugger for AI agents</title>
+<meta name="description" content="Visual traces, live breakpoints, prompt replay. Self-hosted, open source observability for AI agents." />
+
+<!-- Social preview -->
+<meta property="og:title" content="Pathlight — a debugger for AI agents" />
+<meta property="og:description" content="Visual traces, live breakpoints, prompt replay. Self-hosted, open source." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://syndicalt.github.io/pathlight/" />
+<!-- SCREENSHOT: og-cover.png (1200x630) — dashboard with trace list + waterfall visible, dark theme, a few lit-up spans -->
+<meta property="og:image" content="assets/og-cover.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="assets/og-cover.png" />
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='6' cy='6' r='2' fill='%2360a5fa'/%3E%3Ccircle cx='18' cy='6' r='2' fill='%23e4e4e7'/%3E%3Ccircle cx='18' cy='18' r='2' fill='%23e4e4e7'/%3E%3Cpath d='M8 6h6a4 4 0 014 4v8' stroke='%23e4e4e7' stroke-width='2' stroke-linecap='round' fill='none'/%3E%3C/svg%3E" />
+
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<nav class="nav">
+  <a href="#top" class="brand">
+    <span class="brand-accent">Path</span>light
+  </a>
+  <div class="nav-links">
+    <a href="https://github.com/syndicalt/pathlight#readme">Docs</a>
+    <a href="https://github.com/syndicalt/pathlight/blob/master/CHANGELOG.md">Changelog</a>
+    <a href="https://github.com/syndicalt/pathlight" class="nav-cta">GitHub →</a>
+  </div>
+</nav>
+
+<main>
+
+<section class="hero" id="top">
+  <div class="hero-text">
+    <p class="eyebrow">Open source · self-hosted · <span class="dot"></span> live</p>
+    <h1>A debugger for <span class="highlight">AI agents</span>.</h1>
+    <p class="tagline">
+      Visual traces, live breakpoints, prompt replay. Drop the SDK in, get every
+      LLM call and tool invocation as an editable, diffable trace.
+    </p>
+    <div class="cta-row">
+      <a href="#install" class="btn btn-primary">Get started</a>
+      <a href="https://github.com/syndicalt/pathlight" class="btn btn-ghost">
+        <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        Star on GitHub
+      </a>
+    </div>
+    <div class="install-pill">
+      <code>docker compose up -d</code>
+      <button class="copy" data-copy="docker compose up -d">Copy</button>
+    </div>
+  </div>
+
+  <!-- Animated pseudo-waterfall visual. Pure CSS — no image loaded. -->
+  <aside class="hero-visual" aria-hidden="true">
+    <div class="wf-frame">
+      <div class="wf-titlebar">
+        <span class="dot-red"></span><span class="dot-amber"></span><span class="dot-green"></span>
+        <span class="wf-title">research-agent</span>
+        <span class="wf-badge">completed</span>
+      </div>
+      <div class="wf-axis"><span>0ms</span><span>8.4s</span></div>
+      <div class="wf-row">
+        <span class="wf-type t-llm">llm</span><span class="wf-name">classify-question</span>
+        <div class="wf-bar"><div class="wf-fill t-llm" style="left:0%;width:9%"></div></div>
+      </div>
+      <div class="wf-row">
+        <span class="wf-type t-llm">llm</span><span class="wf-name">generate-queries</span>
+        <div class="wf-bar"><div class="wf-fill t-llm" style="left:9%;width:11%"></div></div>
+      </div>
+      <div class="wf-row">
+        <span class="wf-type t-tool">tool</span><span class="wf-name">web_search</span>
+        <div class="wf-bar"><div class="wf-fill t-tool" style="left:20%;width:14%"></div></div>
+      </div>
+      <div class="wf-row">
+        <span class="wf-type t-retrieval">retr</span><span class="wf-name">fetch-url</span>
+        <div class="wf-bar"><div class="wf-fill t-retrieval" style="left:34%;width:8%"></div></div>
+      </div>
+      <div class="wf-row wf-highlight">
+        <span class="wf-type t-llm">llm</span><span class="wf-name">synthesize-answer</span>
+        <div class="wf-bar"><div class="wf-fill t-llm" style="left:42%;width:34%"></div></div>
+      </div>
+      <div class="wf-row">
+        <span class="wf-type t-llm">llm</span><span class="wf-name">self-check</span>
+        <div class="wf-bar"><div class="wf-fill t-llm" style="left:76%;width:10%"></div></div>
+      </div>
+      <div class="wf-row">
+        <span class="wf-type t-tool">tool</span><span class="wf-name">fact_check</span>
+        <div class="wf-bar"><div class="wf-fill t-tool" style="left:86%;width:14%"></div></div>
+      </div>
+    </div>
+  </aside>
+</section>
+
+<section class="features">
+  <div class="feature">
+    <div class="feature-text">
+      <p class="eyebrow">Prompt replay</p>
+      <h2>Change the prompt. Re-run it against the real model. Without leaving the dashboard.</h2>
+      <p>
+        Click any LLM span, edit system prompt or any message, paste your provider key
+        once. <code>Run replay</code> hits OpenAI or Anthropic directly and renders the
+        new output inline. No more copy-pasting into a separate playground tab.
+      </p>
+    </div>
+    <div class="feature-media">
+      <!-- SCREENSHOT: replay.png — trace detail page with LLM span selected, replay editor visible with system prompt + message list + API key field + "Run replay" button; ideally the result panel also populated -->
+      <img src="assets/replay.png" alt="Replay editor open on an LLM span showing editable system prompt, message, and inline response" />
+    </div>
+  </div>
+
+  <div class="feature flip">
+    <div class="feature-text">
+      <p class="eyebrow">Live breakpoints</p>
+      <h2>Pause an agent mid-run. Edit its state. Resume.</h2>
+      <p>
+        <code>await tl.breakpoint(&#123; label, state &#125;)</code> anywhere in your
+        agent. The floating badge on the dashboard lights up, you inspect and edit
+        the state as JSON, hit <em>Resume with edits</em> — the agent continues with
+        whatever you changed. It's <code>pdb</code> for agents.
+      </p>
+    </div>
+    <div class="feature-media">
+      <!-- SCREENSHOT: breakpoint.png — dashboard with floating amber "N paused" badge + open breakpoint panel with JSON state editor -->
+      <img src="assets/breakpoint.png" alt="Breakpoint panel with JSON state editor and Resume / Cancel buttons" />
+    </div>
+  </div>
+
+  <div class="feature">
+    <div class="feature-text">
+      <p class="eyebrow">Trace diff</p>
+      <h2>Did my prompt change regress anything?</h2>
+      <p>
+        Select two traces, click <em>Compare</em>. Every span aligned by name with
+        per-pair duration deltas. Input and output diffs rendered line-by-line.
+        Obvious-at-a-glance when a prompt tweak tanks latency, cost, or quality.
+      </p>
+    </div>
+    <div class="feature-media">
+      <!-- SCREENSHOT: diff.png — trace compare view showing two trace headers side by side, summary delta bar in the middle (with red percentages), aligned spans below -->
+      <img src="assets/diff.png" alt="Side-by-side trace comparison with regression deltas highlighted" />
+    </div>
+  </div>
+</section>
+
+<section class="pillars">
+  <div class="pillar">
+    <h3>Git-linked</h3>
+    <p>Every trace carries the commit SHA that produced it. The <code>/commits</code> dashboard flags cost and latency regressions above 25% in red.</p>
+  </div>
+  <div class="pillar">
+    <h3>CI-ready</h3>
+    <p><code>@pathlight/eval</code> gives you pytest-style assertions over recent traces. <code>npx pathlight-eval specs.mjs</code> exits nonzero on any violation.</p>
+  </div>
+  <div class="pillar">
+    <h3>OpenTelemetry</h3>
+    <p>Point any OTel-instrumented app at <code>/v1/otlp/traces</code> — <code>gen_ai.*</code> attributes map straight into Pathlight's span model.</p>
+  </div>
+  <div class="pillar">
+    <h3>TypeScript + Python</h3>
+    <p><code>npm install @pathlight/sdk</code> or <code>pip install pathlight</code>. Same dashboard, same features, same data model.</p>
+  </div>
+  <div class="pillar">
+    <h3>Self-hosted</h3>
+    <p>Your traces stay on your machine. Single SQLite file. Docker Compose or one <code>turbo dev</code>.</p>
+  </div>
+  <div class="pillar">
+    <h3>Share without signup</h3>
+    <p><code>pathlight share &lt;trace-id&gt;</code> emits a single self-contained HTML file. Zero dependencies to open.</p>
+  </div>
+</section>
+
+<section id="install" class="install">
+  <h2>Start in 30 seconds</h2>
+  <div class="install-grid">
+    <div class="install-card">
+      <p class="eyebrow">Self-host</p>
+      <pre><code>git clone https://github.com/syndicalt/pathlight.git
+cd pathlight
+docker compose up -d</code></pre>
+      <p>Dashboard at <code>localhost:3100</code>, collector at <code>localhost:4100</code>.</p>
+    </div>
+    <div class="install-card">
+      <p class="eyebrow">Instrument — TypeScript</p>
+      <pre><code>npm install @pathlight/sdk</code></pre>
+      <pre><code>import { Pathlight } from "@pathlight/sdk";
+
+const tl = new Pathlight(&#123; baseUrl: "http://localhost:4100" &#125;);
+
+const trace = tl.trace("my-agent", &#123; query &#125;);
+const span = trace.span("llm.chat", "llm", &#123; model: "gpt-4o" &#125;);
+await span.end(&#123; output, inputTokens, outputTokens &#125;);
+await trace.end(&#123; output: final &#125;);</code></pre>
+    </div>
+    <div class="install-card">
+      <p class="eyebrow">Instrument — Python</p>
+      <pre><code>pip install pathlight</code></pre>
+      <pre><code>from pathlight import Pathlight
+
+pl = Pathlight(base_url="http://localhost:4100")
+
+with pl.trace("my-agent", input=&#123;"query": q&#125;) as trace:
+    with trace.span("llm.chat", type="llm", model="gpt-4o") as s:
+        s.end(output=result, input_tokens=50, output_tokens=10)
+    trace.end(output=final)</code></pre>
+    </div>
+  </div>
+</section>
+
+<section class="cta-final">
+  <h2>Stop debugging agents with <code>console.log</code>.</h2>
+  <div class="cta-row">
+    <a href="https://github.com/syndicalt/pathlight" class="btn btn-primary">Get Pathlight</a>
+    <a href="https://github.com/syndicalt/pathlight/blob/master/README.md" class="btn btn-ghost">Read the docs</a>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="footer-grid">
+    <div>
+      <p class="brand"><span class="brand-accent">Path</span>light</p>
+      <p class="footer-muted">v0.2.0 · MIT</p>
+    </div>
+    <div>
+      <p class="footer-heading">Install</p>
+      <a href="https://www.npmjs.com/package/@pathlight/sdk">@pathlight/sdk</a>
+      <a href="https://pypi.org/project/pathlight/">pathlight (PyPI)</a>
+      <a href="https://www.npmjs.com/package/@pathlight/eval">@pathlight/eval</a>
+      <a href="https://www.npmjs.com/package/@pathlight/cli">@pathlight/cli</a>
+    </div>
+    <div>
+      <p class="footer-heading">Project</p>
+      <a href="https://github.com/syndicalt/pathlight">GitHub</a>
+      <a href="https://github.com/syndicalt/pathlight/issues">Issues</a>
+      <a href="https://github.com/syndicalt/pathlight/blob/master/CHANGELOG.md">Changelog</a>
+    </div>
+    <div>
+      <p class="footer-heading">Docs</p>
+      <a href="https://github.com/syndicalt/pathlight/blob/master/docs/docker.md">Docker</a>
+      <a href="https://github.com/syndicalt/pathlight/blob/master/docs/breakpoints.md">Breakpoints</a>
+      <a href="https://github.com/syndicalt/pathlight/blob/master/docs/replay.md">Replay</a>
+      <a href="https://github.com/syndicalt/pathlight/blob/master/docs/trace-diff.md">Trace diff</a>
+      <a href="https://github.com/syndicalt/pathlight/blob/master/docs/opentelemetry.md">OpenTelemetry</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Copy-to-clipboard for the install pill.
+for (const btn of document.querySelectorAll("[data-copy]")) {
+  btn.addEventListener("click", () => {
+    navigator.clipboard.writeText(btn.getAttribute("data-copy") || "");
+    const original = btn.textContent;
+    btn.textContent = "Copied";
+    setTimeout(() => (btn.textContent = original), 1200);
+  });
+}
+</script>
+
+</body>
+</html>
