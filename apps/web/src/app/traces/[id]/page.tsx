@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { fetchApi, patchApi } from "../../../lib/api";
@@ -103,83 +103,34 @@ function JsonBlock({ data, label }: { data: unknown; label: string }) {
 
 function SpanInspector({ span, onClose }: { span: Span; onClose: () => void }) {
   const style = TYPE_STYLES[span.type] || TYPE_STYLES.custom;
+  const meta = parseJson(span.metadata) as Record<string, unknown> | null;
+  const source = meta?._source as { file?: string; line?: number; func?: string } | undefined;
+  const isLlm = span.type === "llm";
 
   return (
-    <div className="fixed top-0 right-0 h-screen w-[480px] bg-zinc-900 border-l border-zinc-800 z-40 overflow-y-auto shadow-2xl">
-      <div className="sticky top-0 bg-zinc-900 border-b border-zinc-800 px-5 py-4 flex items-center justify-between z-10">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className={`px-2 py-0.5 rounded text-[10px] font-medium border ${style.bg} ${style.text} ${style.border}`}>
-            {span.type}
-          </span>
-          <h2 className="font-semibold text-sm truncate">{span.name}</h2>
+    <section className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
+      <div className="border-b border-zinc-800 px-5 py-3 flex items-center gap-3">
+        <span className={`px-2 py-0.5 rounded text-[10px] font-medium border shrink-0 ${style.bg} ${style.text} ${style.border}`}>
+          {span.type}
+        </span>
+        <h2 className="font-semibold text-sm truncate">{span.name}</h2>
+        <div className="flex items-center gap-1.5">
+          <div className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT[span.status] || "bg-zinc-500"}`} />
+          <span className="text-xs text-zinc-400">{span.status}</span>
         </div>
-        <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300 shrink-0 ml-2">
+        <span className="text-xs text-zinc-500 font-mono">{formatDuration(span.durationMs)}</span>
+        {(span.inputTokens || span.outputTokens) && (
+          <span className="text-xs text-zinc-500 font-mono">{span.inputTokens || 0}/{span.outputTokens || 0} tok</span>
+        )}
+        {span.model && <span className="text-xs text-zinc-500 font-mono">{span.model}</span>}
+        <button onClick={onClose} className="ml-auto text-zinc-500 hover:text-zinc-300" aria-label="Close inspector">
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       </div>
 
-      <div className="px-5 py-4 space-y-5">
-        {/* Metadata grid */}
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <span className="text-[10px] text-zinc-600 uppercase">Status</span>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <div className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT[span.status] || "bg-zinc-500"}`} />
-              <span className="text-zinc-300">{span.status}</span>
-            </div>
-          </div>
-          <div>
-            <span className="text-[10px] text-zinc-600 uppercase">Duration</span>
-            <p className="text-zinc-300 mt-0.5">{formatDuration(span.durationMs)}</p>
-          </div>
-          {span.model && (
-            <div>
-              <span className="text-[10px] text-zinc-600 uppercase">Model</span>
-              <p className="text-zinc-300 font-mono text-xs mt-0.5">{span.model}</p>
-            </div>
-          )}
-          {span.provider && (
-            <div>
-              <span className="text-[10px] text-zinc-600 uppercase">Provider</span>
-              <p className="text-zinc-300 mt-0.5">{span.provider}</p>
-            </div>
-          )}
-          {(span.inputTokens || span.outputTokens) && (
-            <div>
-              <span className="text-[10px] text-zinc-600 uppercase">Tokens</span>
-              <p className="text-zinc-300 font-mono text-xs mt-0.5">
-                {span.inputTokens || 0} in / {span.outputTokens || 0} out
-              </p>
-            </div>
-          )}
-          {span.toolName && (
-            <div>
-              <span className="text-[10px] text-zinc-600 uppercase">Tool</span>
-              <p className="text-zinc-300 font-mono text-xs mt-0.5">{span.toolName}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Source location */}
-        {(() => {
-          const meta = parseJson(span.metadata) as Record<string, unknown> | null;
-          const source = meta?._source as { file?: string; line?: number; func?: string } | undefined;
-          if (!source?.file) return null;
-          const shortFile = source.file.split("/").slice(-2).join("/");
-          return (
-            <div className="bg-zinc-800/50 border border-zinc-700/50 rounded-lg p-3">
-              <p className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1.5">Source</p>
-              <code className="text-xs text-blue-400 font-mono">{shortFile}:{source.line}</code>
-              {source.func && source.func !== "(anonymous)" && (
-                <p className="text-[10px] text-zinc-500 mt-1">in <span className="text-zinc-400">{source.func}()</span></p>
-              )}
-              <p className="text-[10px] text-zinc-700 mt-1 break-all">{source.file}</p>
-            </div>
-          );
-        })()}
-
+      <div className="px-5 py-4 space-y-4">
         {span.error && (
           <div className="bg-red-900/20 border border-red-800/50 rounded-lg p-3">
             <p className="text-[10px] text-red-400 uppercase tracking-widest mb-1">Error</p>
@@ -187,15 +138,38 @@ function SpanInspector({ span, onClose }: { span: Span; onClose: () => void }) {
           </div>
         )}
 
-        <JsonBlock data={parseJson(span.input)} label="Input" />
-        <JsonBlock data={parseJson(span.output)} label="Output" />
-        <JsonBlock data={parseJson(span.toolArgs)} label="Tool Arguments" />
-        <JsonBlock data={parseJson(span.toolResult)} label="Tool Result" />
-        <JsonBlock data={parseJson(span.metadata)} label="Metadata" />
+        {source?.file && (
+          <div className="bg-zinc-800/50 border border-zinc-700/50 rounded-lg px-3 py-2 flex items-center gap-3 text-xs">
+            <span className="text-[10px] text-zinc-600 uppercase tracking-widest">Source</span>
+            <code className="text-blue-400 font-mono">
+              {source.file.split("/").slice(-2).join("/")}:{source.line}
+            </code>
+            {source.func && source.func !== "(anonymous)" && (
+              <span className="text-zinc-500">in <span className="text-zinc-400">{source.func}()</span></span>
+            )}
+          </div>
+        )}
 
-        {span.type === "llm" && <ReplayPanel span={span} />}
+        {isLlm ? (
+          <div className="grid grid-cols-1 xl:grid-cols-[1fr_1fr] gap-4">
+            <ReplayPanel span={span} />
+            <div className="space-y-3">
+              <JsonBlock data={parseJson(span.input)} label="Original Input" />
+              <JsonBlock data={parseJson(span.output)} label="Original Output" />
+              <JsonBlock data={parseJson(span.metadata)} label="Metadata" />
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <JsonBlock data={parseJson(span.input)} label="Input" />
+            <JsonBlock data={parseJson(span.output)} label="Output" />
+            <JsonBlock data={parseJson(span.toolArgs)} label="Tool Arguments" />
+            <JsonBlock data={parseJson(span.toolResult)} label="Tool Result" />
+            <JsonBlock data={parseJson(span.metadata)} label="Metadata" />
+          </div>
+        )}
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -381,6 +355,23 @@ export default function TraceDetailPage() {
   const [events, setEvents] = useState<SpanEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSpan, setSelectedSpan] = useState<Span | null>(null);
+  const inspectorRef = useRef<HTMLDivElement | null>(null);
+
+  // Close the inspector with Escape.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && selectedSpan) setSelectedSpan(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selectedSpan]);
+
+  // Scroll the inspector into view on selection.
+  useEffect(() => {
+    if (selectedSpan && inspectorRef.current) {
+      inspectorRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [selectedSpan?.id]);
 
   useEffect(() => {
     fetchApi<{ trace: Trace; spans: Span[]; events: SpanEvent[] }>(`/v1/traces/${id}`)
@@ -401,7 +392,7 @@ export default function TraceDetailPage() {
 
   if (loading || !trace) {
     return (
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-8">
         <p className="text-zinc-500">Loading trace...</p>
       </div>
     );
@@ -415,7 +406,7 @@ export default function TraceDetailPage() {
   const tags: string[] = trace.tags ? JSON.parse(trace.tags) : [];
 
   return (
-    <div className={`max-w-6xl mx-auto px-6 py-8 space-y-6 ${selectedSpan ? "mr-[480px]" : ""}`}>
+    <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
         <Link href="/" className="text-zinc-500 hover:text-zinc-300 transition-colors">
@@ -543,9 +534,11 @@ export default function TraceDetailPage() {
         </div>
       </div>
 
-      {/* Span Inspector Panel */}
+      {/* Span Inspector Panel — flows below the timeline at full width */}
       {selectedSpan && (
-        <SpanInspector span={selectedSpan} onClose={() => setSelectedSpan(null)} />
+        <div ref={inspectorRef} className="scroll-mt-4">
+          <SpanInspector span={selectedSpan} onClose={() => setSelectedSpan(null)} />
+        </div>
       )}
     </div>
   );
