@@ -116,6 +116,48 @@ export class Pathlight {
     return new Trace(this, name, input, options);
   }
 
+  /**
+   * Register a live breakpoint that pauses execution until the dashboard
+   * resumes it. Returns the (possibly-modified) state the caller passed in.
+   *
+   * Typical use:
+   *
+   *   const state = await tl.breakpoint({
+   *     label: "post-retrieval",
+   *     state: { docs, query },
+   *   });
+   *
+   * If the dashboard edits `state` before resuming, the edited value is what
+   * the promise resolves to — so downstream code sees the override.
+   */
+  async breakpoint<T = unknown>(options: {
+    label: string;
+    state?: T;
+    traceId?: string;
+    spanId?: string;
+    /** Maximum time to wait before auto-resuming with the original state. */
+    timeoutMs?: number;
+  }): Promise<T> {
+    const res = await fetch(`${this.baseUrl}/v1/breakpoints`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        label: options.label,
+        state: options.state ?? null,
+        traceId: options.traceId,
+        spanId: options.spanId,
+        timeoutMs: options.timeoutMs,
+      }),
+    });
+
+    if (res.status === 408 || !res.ok) {
+      // Auto-resume on timeout or error — don't wedge the caller.
+      return (options.state as T) ?? (null as unknown as T);
+    }
+    const body = (await res.json()) as { state?: T };
+    return (body.state ?? (options.state as T)) as T;
+  }
+
   /** @internal */
   async _createTrace(data: { name: string; projectId?: string; input?: unknown; tags?: string[]; metadata?: unknown }) {
     const git = this.gitContextDisabled ? null : detectGitContext();
