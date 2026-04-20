@@ -21,7 +21,7 @@
 // behind a runtime require that static analyzers cannot see.
 type ExecSync = (typeof import("node:child_process"))["execSync"];
 
-interface GitContext {
+export interface GitContext {
   commit: string;
   branch: string;
   dirty: boolean;
@@ -104,6 +104,13 @@ interface PathlightConfig {
   apiKey?: string;
   /** Disable automatic git-context capture (commit/branch/dirty). */
   disableGitContext?: boolean;
+  /**
+   * Provide git context explicitly. Use this in environments where the SDK
+   * cannot shell out to `git` (React Native, browsers, sandboxed runtimes):
+   * capture the values at build time and pass them in. When set, this
+   * overrides any auto-detection.
+   */
+  git?: GitContext | null;
 }
 
 export class Pathlight {
@@ -111,12 +118,14 @@ export class Pathlight {
   private projectId?: string;
   private apiKey?: string;
   private gitContextDisabled: boolean;
+  private gitOverride: GitContext | null | undefined;
 
   constructor(config: PathlightConfig) {
     this.baseUrl = config.baseUrl.replace(/\/$/, "");
     this.projectId = config.projectId;
     this.apiKey = config.apiKey;
     this.gitContextDisabled = !!config.disableGitContext;
+    this.gitOverride = config.git;
   }
 
   private async post(path: string, body: unknown) {
@@ -191,7 +200,11 @@ export class Pathlight {
 
   /** @internal */
   async _createTrace(data: { name: string; projectId?: string; input?: unknown; tags?: string[]; metadata?: unknown }) {
-    const git = this.gitContextDisabled ? null : detectGitContext();
+    const git = this.gitContextDisabled
+      ? null
+      : this.gitOverride !== undefined
+        ? this.gitOverride
+        : detectGitContext();
     return this.post("/v1/traces", {
       ...data,
       projectId: data.projectId || this.projectId,
