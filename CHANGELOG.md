@@ -2,7 +2,12 @@
 
 All notable changes to Pathlight. Dates are release days, not merge days.
 
-## Unreleased
+## 0.2.0 — 2026-04-20
+
+First tagged release since 0.1.0. Adds real-time streaming, trace diff,
+git-linked regressions, live breakpoints, LLM replay, the `@pathlight/eval`
+CI runner, and the `pathlight share` CLI. New packages published to npm:
+`@pathlight/eval`, `@pathlight/cli`. Updated: `@pathlight/sdk`.
 
 ### Added — Real-time dashboard ([#3](https://github.com/syndicalt/pathlight/issues/3))
 - **SSE stream** at `GET /v1/traces/stream` broadcasts `trace.created` and
