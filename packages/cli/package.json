@@ -1,0 +1,32 @@
+{
+  "name": "@pathlight/cli",
+  "version": "0.1.0",
+  "description": "Command-line tools for Pathlight",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "pathlight": "./bin/pathlight.js"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["ai", "agent", "trace", "cli", "pathlight"],
+  "author": "Nicholas Blanchard",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/syndicalt/pathlight.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/syndicalt/pathlight",
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}
