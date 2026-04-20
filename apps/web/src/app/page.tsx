@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { fetchApi } from "../lib/api";
+import { fetchApi, COLLECTOR_URL } from "../lib/api";
 import { formatDuration, formatTokens, formatTimestamp } from "../lib/format";
 
 interface Trace {
@@ -15,6 +15,7 @@ interface Trace {
   totalCost: number | null;
   tags: string | null;
   createdAt: string;
+  reviewedAt: string | null;
   issues: string[];
   hasIssues: boolean;
 }
@@ -40,6 +41,43 @@ export default function TracesPage() {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    const source = new EventSource(`${COLLECTOR_URL}/v1/traces/stream`);
+
+    const onCreated = (e: MessageEvent) => {
+      const trace = JSON.parse(e.data) as Trace;
+      setTraces((prev) => (prev.some((t) => t.id === trace.id) ? prev : [trace, ...prev]));
+      setTotal((prev) => prev + 1);
+    };
+
+    const onUpdated = (e: MessageEvent) => {
+      const trace = JSON.parse(e.data) as Trace;
+      setTraces((prev) =>
+        prev.map((t) =>
+          t.id === trace.id
+            ? {
+                ...t,
+                ...trace,
+                // Stream events carry stub issue data; keep the richer enrichment
+                // from the initial list fetch unless it becomes non-empty later.
+                issues: trace.issues.length ? trace.issues : t.issues,
+                hasIssues: trace.hasIssues || t.hasIssues,
+              }
+            : t,
+        ),
+      );
+    };
+
+    source.addEventListener("trace.created", onCreated);
+    source.addEventListener("trace.updated", onUpdated);
+
+    return () => {
+      source.removeEventListener("trace.created", onCreated);
+      source.removeEventListener("trace.updated", onUpdated);
+      source.close();
+    };
   }, []);
 
   const filtered = filter
@@ -81,16 +119,23 @@ export default function TracesPage() {
             let inputPreview = "";
             try {
               const parsed = JSON.parse(trace.input || "{}");
-              inputPreview = typeof parsed === "string" ? parsed : Object.values(parsed).join(" ").slice(0, 100);
+              inputPreview =
+                typeof parsed === "string"
+                  ? parsed
+                  : Object.values(parsed)
+                      .map((v) => (typeof v === "string" ? v : JSON.stringify(v)))
+                      .join(" ")
+                      .slice(0, 100);
             } catch {
               inputPreview = (trace.input || "").slice(0, 100);
             }
 
+            const unreviewed = !trace.reviewedAt;
             return (
               <Link
                 key={trace.id}
                 href={`/traces/${trace.id}`}
-                className="block bg-zinc-900 border border-zinc-800 rounded-lg px-5 py-4 hover:border-zinc-700 transition-colors"
+                className={`block bg-zinc-900 border border-zinc-800 border-l-2 rounded-lg px-5 py-4 hover:border-zinc-700 transition-colors ${unreviewed ? "border-l-sky-500/40" : "border-l-zinc-800"}`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 min-w-0">
