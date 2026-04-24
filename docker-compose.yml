@@ -32,6 +32,9 @@ services:
       - REPLAY_BASE_URL=${REPLAY_BASE_URL:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      # Required to enable BYOK key endpoints (/v1/projects/:id/keys).
+      # Generate: node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+      - PATHLIGHT_SEAL_KEY=${PATHLIGHT_SEAL_KEY:-}
     healthcheck:
       test: ["CMD-SHELL", "node -e \"fetch('http://localhost:4100/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""]
       interval: 10s
