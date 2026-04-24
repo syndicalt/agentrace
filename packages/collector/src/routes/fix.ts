@@ -2,6 +2,10 @@ import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { fix, type FixOptions, type FixProgress, type Source } from "@pathlight/fix";
 import { validateFixRequest, type FixRequest } from "./fix-schema.js";
+import {
+  createEnvSecretResolver,
+  type SecretResolver,
+} from "./fix-secret-resolver.js";
 
 /**
  * `POST /v1/fix` — wraps `@pathlight/fix` in an SSE-streamed web endpoint so
@@ -22,14 +26,20 @@ import { validateFixRequest, type FixRequest } from "./fix-schema.js";
  *
  * T3 wires the engine: progress events are forwarded via `onProgress`, the
  * engine's `fix()` resolves to the `result` event, and every invocation ends
- * with a `done` event. Secret resolution is still a stub — T4 wires the real
- * `keyId`/`tokenId` → plaintext lookup.
+ * with a `done` event.
+ *
+ * T4 wires secret resolution via the `SecretResolver` interface. The default
+ * is an env-var stub (see `fix-secret-resolver.ts`) — #48's encrypted store
+ * provides the production implementation. Resolver misses surface as a
+ * generic `error` SSE event; we never reveal which ID was invalid.
  */
 
 export function createFixRoutes(options?: FixRouteOptions) {
   const app = new Hono();
   const runFix = options?.runFix ?? fix;
-  const resolveSecrets = options?.resolveSecrets ?? defaultStubResolveSecrets;
+  const secretResolver = options?.secretResolver ?? createEnvSecretResolver();
+  const resolveSecrets =
+    options?.resolveSecrets ?? ((request: FixRequest) => resolveRequestSecrets(request, secretResolver));
 
   app.post("/", async (c) => {
     const raw = await c.req.json().catch(() => null);
@@ -55,6 +65,20 @@ export function createFixRoutes(options?: FixRouteOptions) {
       try {
         secrets = await resolveSecrets(request);
       } catch {
+        // Resolver threw. Never echo its message — it may describe which
+        // lookup failed, which leaks the existence of specific IDs.
+        await sendEvent("error", { message: "secret resolution failed" });
+        await sendEvent("done", { ok: false });
+        return;
+      }
+      if (!secrets.llmApiKey) {
+        // Generic error: never reveal whether llmKey vs gitToken was the
+        // missing piece (parent invariant #1 — no ID-existence leaks).
+        await sendEvent("error", { message: "secret resolution failed" });
+        await sendEvent("done", { ok: false });
+        return;
+      }
+      if (request.source.kind === "git" && !secrets.gitToken) {
         await sendEvent("error", { message: "secret resolution failed" });
         await sendEvent("done", { ok: false });
         return;
@@ -107,6 +131,15 @@ export function createFixRoutes(options?: FixRouteOptions) {
  */
 export interface FixRouteOptions {
   runFix?: (options: FixOptions) => Promise<Awaited<ReturnType<typeof fix>>>;
+  /**
+   * Production resolver backed by #48's encrypted key store. Leave undefined
+   * in dev/test to use the env-var stub.
+   */
+  secretResolver?: SecretResolver;
+  /**
+   * Lower-level seam used only by tests that want to short-circuit resolver
+   * composition. Real deployments use `secretResolver`.
+   */
   resolveSecrets?: (request: FixRequest) => Promise<ResolvedSecrets>;
 }
 
@@ -116,9 +149,23 @@ export interface ResolvedSecrets {
   gitToken?: string;
 }
 
-// T3 placeholder. T4 replaces this with the P4-backed resolver.
-async function defaultStubResolveSecrets(_request: FixRequest): Promise<ResolvedSecrets> {
-  throw new Error("secret resolver not wired (T4)");
+async function resolveRequestSecrets(
+  request: FixRequest,
+  resolver: SecretResolver,
+): Promise<ResolvedSecrets> {
+  const llmApiKey = await resolver.resolveLlmKey(request.projectId, request.llm.keyId);
+  if (!llmApiKey) {
+    // Throw a generic error; the route catches and emits a sanitized SSE
+    // `error` event without echoing message content.
+    throw new Error("resolver miss");
+  }
+  const out: ResolvedSecrets = { llmApiKey };
+  if (request.source.kind === "git") {
+    const gitToken = await resolver.resolveGitToken(request.projectId, request.source.tokenId);
+    if (!gitToken) throw new Error("resolver miss");
+    out.gitToken = gitToken;
+  }
+  return out;
 }
 
 function buildEngineSource(request: FixRequest, secrets: ResolvedSecrets): Source {
