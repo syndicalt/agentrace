@@ -13,3 +13,5 @@
 
 export { loadSealKey, SealKeyError } from "./seal-key.js";
 export { seal, unseal, previewLast4, DecryptionError } from "./seal.js";
+export { KeyStore } from "./store.js";
+export type { ApiKeyKind, ApiKeyMetadata, CreateKeyInput } from "./store.js";
