@@ -20,3 +20,4 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 build/
+.gstack/
