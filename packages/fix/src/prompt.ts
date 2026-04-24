@@ -1,4 +1,4 @@
-import { relative, isAbsolute } from "node:path";
+import { relative, isAbsolute, join } from "node:path";
 import type { LlmMessage, LlmToolSpec } from "./llm/index.js";
 import type { FileContent, SourceReader } from "./source/path.js";
 import type { SpanRecord, TraceWithSpans } from "./collector-client.js";
@@ -43,10 +43,14 @@ export function inferFilesFromSpans(spans: SpanRecord[], sourceRoot: string): st
     if (!parsed || typeof parsed !== "object") continue;
     const source = (parsed as { _source?: { file?: string } })._source;
     if (!source?.file) continue;
-    const abs = isAbsolute(source.file) ? source.file : source.file;
-    if (!abs.startsWith(sourceRoot)) continue;
+    // The SDK captures `_source.file` from the call-site stack. In a CI
+    // build that path is absolute and machine-specific; in a path-mode fix
+    // the user supplies a different `sourceRoot`. Treat any non-absolute
+    // value as already relative to `sourceRoot`, and drop absolute values
+    // that fall outside it.
+    const abs = isAbsolute(source.file) ? source.file : join(sourceRoot, source.file);
     const rel = relative(sourceRoot, abs);
-    if (rel && !rel.startsWith("..")) seen.add(rel);
+    if (rel && !rel.startsWith("..") && !isAbsolute(rel)) seen.add(rel);
   }
   return [...seen];
 }
