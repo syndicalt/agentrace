@@ -25,6 +25,10 @@ export type {
   CompletionRequest,
   CompletionResult,
 } from "./llm/index.js";
+export { buildPrompt, inferFilesFromSpans, PROPOSE_FIX_TOOL } from "./prompt.js";
+export type { PromptBuildResult } from "./prompt.js";
+export { parseFixResponse, isUnifiedDiff } from "./diff-parser.js";
+export type { ParsedFix } from "./diff-parser.js";
 
 export async function fix(_options: FixOptions): Promise<FixResult> {
   throw new FixError("fix() is not yet implemented — wired up in T8");
