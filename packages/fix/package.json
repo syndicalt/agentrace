@@ -1,0 +1,48 @@
+{
+  "name": "@pathlight/fix",
+  "version": "0.1.0",
+  "description": "Code-fixing agent core for Pathlight — reads failing traces, proposes diffs via BYOK LLM providers.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "trace",
+    "debug",
+    "fix",
+    "pathlight",
+    "llm",
+    "byok"
+  ],
+  "author": "Nicholas Blanchard",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/syndicalt/pathlight.git",
+    "directory": "packages/fix"
+  },
+  "homepage": "https://github.com/syndicalt/pathlight",
+  "dependencies": {
+    "@pathlight/sdk": "^0.2.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.4"
+  }
+}
