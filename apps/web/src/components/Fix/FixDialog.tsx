@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { FixForm, type FixFormValue } from "./FixForm";
 
 export interface FixContext {
   traceId: string;
@@ -15,16 +16,33 @@ interface FixDialogProps {
 }
 
 export function FixDialog({ open, context, onClose }: FixDialogProps) {
+  const [submitting, setSubmitting] = useState(false);
+  const [lastSubmitted, setLastSubmitted] = useState<FixFormValue | null>(null);
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape" && !submitting) onClose();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [open, onClose, submitting]);
+
+  useEffect(() => {
+    if (!open) {
+      setSubmitting(false);
+      setLastSubmitted(null);
+    }
+  }, [open]);
 
   if (!open || !context) return null;
+
+  const handleSubmit = (value: FixFormValue): void => {
+    // T4 wires the SSE stream here. For now the form flows to a captured
+    // payload display so T3's key picker can be developed against a real form.
+    setLastSubmitted(value);
+    setSubmitting(false);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
@@ -43,7 +61,8 @@ export function FixDialog({ open, context, onClose }: FixDialogProps) {
           <button
             type="button"
             onClick={onClose}
-            className="ml-auto text-zinc-500 hover:text-zinc-300 shrink-0"
+            disabled={submitting}
+            className="ml-auto text-zinc-500 hover:text-zinc-300 shrink-0 disabled:opacity-50"
             aria-label="Close"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -51,10 +70,22 @@ export function FixDialog({ open, context, onClose }: FixDialogProps) {
             </svg>
           </button>
         </div>
-        <div className="px-5 py-6 space-y-3 overflow-y-auto">
-          <p className="text-sm text-zinc-400">
-            Fix form lands in T2. Key picker in T3. SSE stream in T4. Diff preview in T5.
-          </p>
+        <div className="px-5 py-5 overflow-y-auto">
+          <FixForm
+            projectId={context.projectId}
+            submitting={submitting}
+            onSubmit={handleSubmit}
+          />
+          {lastSubmitted && (
+            <div className="mt-5 bg-zinc-950 border border-zinc-800 rounded-lg p-3">
+              <p className="text-[10px] text-zinc-600 uppercase tracking-widest mb-2">
+                Captured payload (T4 streams this to /v1/fix)
+              </p>
+              <pre className="text-[11px] text-zinc-400 font-mono whitespace-pre-wrap">
+                {JSON.stringify(lastSubmitted, null, 2)}
+              </pre>
+            </div>
+          )}
         </div>
       </div>
     </div>
