@@ -8,6 +8,7 @@ import { createProjectRoutes } from "./routes/projects.js";
 import { createBreakpointRoutes } from "./routes/breakpoints.js";
 import { createReplayRoutes } from "./routes/replay.js";
 import { createOtlpRoutes } from "./routes/otlp.js";
+import { createFixRoutes } from "./routes/fix.js";
 import { createKeyRoutes } from "./routes/keys.js";
 
 interface RouterContext {
@@ -31,6 +32,7 @@ export async function createRouter(ctx: RouterContext) {
   app.route("/v1/breakpoints", createBreakpointRoutes());
   app.route("/v1/replay", createReplayRoutes());
   app.route("/v1/otlp", createOtlpRoutes(ctx.db));
+  app.route("/v1/fix", createFixRoutes());
 
   // BYOK key management — nested under /v1/projects/:id/keys. Only
   // mounted when a KeyStore is provided (requires PATHLIGHT_SEAL_KEY).
