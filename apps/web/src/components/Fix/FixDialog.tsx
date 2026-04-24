@@ -2,12 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { FixForm, type FixFormValue } from "./FixForm";
+import { FixStream, type FixResultPayload } from "./FixStream";
 
 export interface FixContext {
   traceId: string;
   spanId?: string;
   projectId: string | null;
 }
+
+type Phase =
+  | { kind: "idle" }
+  | { kind: "streaming"; form: FixFormValue }
+  | { kind: "done"; form: FixFormValue; result: FixResultPayload }
+  | { kind: "error"; form: FixFormValue; message: string };
 
 interface FixDialogProps {
   open: boolean;
@@ -16,8 +23,8 @@ interface FixDialogProps {
 }
 
 export function FixDialog({ open, context, onClose }: FixDialogProps) {
-  const [submitting, setSubmitting] = useState(false);
-  const [lastSubmitted, setLastSubmitted] = useState<FixFormValue | null>(null);
+  const [phase, setPhase] = useState<Phase>({ kind: "idle" });
+  const submitting = phase.kind === "streaming";
 
   useEffect(() => {
     if (!open) return;
@@ -29,19 +36,13 @@ export function FixDialog({ open, context, onClose }: FixDialogProps) {
   }, [open, onClose, submitting]);
 
   useEffect(() => {
-    if (!open) {
-      setSubmitting(false);
-      setLastSubmitted(null);
-    }
+    if (!open) setPhase({ kind: "idle" });
   }, [open]);
 
   if (!open || !context) return null;
 
-  const handleSubmit = (value: FixFormValue): void => {
-    // T4 wires the SSE stream here. For now the form flows to a captured
-    // payload display so T3's key picker can be developed against a real form.
-    setLastSubmitted(value);
-    setSubmitting(false);
+  const handleSubmit = (form: FixFormValue): void => {
+    setPhase({ kind: "streaming", form });
   };
 
   return (
@@ -70,20 +71,39 @@ export function FixDialog({ open, context, onClose }: FixDialogProps) {
             </svg>
           </button>
         </div>
-        <div className="px-5 py-5 overflow-y-auto">
+        <div className="px-5 py-5 space-y-5 overflow-y-auto">
           <FixForm
             projectId={context.projectId}
             submitting={submitting}
             onSubmit={handleSubmit}
           />
-          {lastSubmitted && (
-            <div className="mt-5 bg-zinc-950 border border-zinc-800 rounded-lg p-3">
-              <p className="text-[10px] text-zinc-600 uppercase tracking-widest mb-2">
-                Captured payload (T4 streams this to /v1/fix)
+
+          {phase.kind === "streaming" && context.projectId && (
+            <FixStream
+              projectId={context.projectId}
+              traceId={context.traceId}
+              form={phase.form}
+              onResult={(result) => setPhase({ kind: "done", form: phase.form, result })}
+              onFail={(message) => setPhase({ kind: "error", form: phase.form, message })}
+            />
+          )}
+
+          {phase.kind === "error" && (
+            <div className="bg-red-950/40 border border-red-900 rounded-lg p-3 text-sm text-red-300">
+              {phase.message}
+            </div>
+          )}
+
+          {phase.kind === "done" && (
+            <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-4 space-y-2">
+              <p className="text-[10px] text-zinc-600 uppercase tracking-widest">Result</p>
+              <p className="text-sm text-zinc-300">{phase.result.explanation}</p>
+              <p className="text-xs text-zinc-500">
+                Files changed: {phase.result.filesChanged.length > 0 ? phase.result.filesChanged.join(", ") : "none"}
               </p>
-              <pre className="text-[11px] text-zinc-400 font-mono whitespace-pre-wrap">
-                {JSON.stringify(lastSubmitted, null, 2)}
-              </pre>
+              <p className="text-xs text-zinc-600">
+                Diff preview lands in T5 · download/copy in T7 · apply in T6.
+              </p>
             </div>
           )}
         </div>
