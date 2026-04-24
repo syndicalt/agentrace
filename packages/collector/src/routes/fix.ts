@@ -24,14 +24,11 @@ import {
  *   - `error`    — sanitized engine failure (no keys, no tokens, no stack)
  *   - `done`     — stream closure sentinel; always fires last
  *
- * T3 wires the engine: progress events are forwarded via `onProgress`, the
- * engine's `fix()` resolves to the `result` event, and every invocation ends
- * with a `done` event.
- *
- * T4 wires secret resolution via the `SecretResolver` interface. The default
- * is an env-var stub (see `fix-secret-resolver.ts`) — #48's encrypted store
- * provides the production implementation. Resolver misses surface as a
- * generic `error` SSE event; we never reveal which ID was invalid.
+ * Meta-trace emission: NOT done here. `@pathlight/fix`'s `fix()` already
+ * emits its own meta-trace on every invocation (see parent-invariant #3 in
+ * issue #44). Adding a second trace from the route would double-instrument.
+ * The engine's `metaTraceId` is echoed on the `result` event so clients can
+ * link back to it.
  */
 
 export function createFixRoutes(options?: FixRouteOptions) {
@@ -40,6 +37,7 @@ export function createFixRoutes(options?: FixRouteOptions) {
   const secretResolver = options?.secretResolver ?? createEnvSecretResolver();
   const resolveSecrets =
     options?.resolveSecrets ?? ((request: FixRequest) => resolveRequestSecrets(request, secretResolver));
+  const log = options?.logger ?? defaultLogger;
 
   app.post("/", async (c) => {
     const raw = await c.req.json().catch(() => null);
@@ -53,7 +51,17 @@ export function createFixRoutes(options?: FixRouteOptions) {
     return streamSSE(c, async (stream) => {
       const sendEvent = async (event: string, data: unknown) => {
         if (stream.aborted) return;
-        await stream.writeSSE({ event, data: JSON.stringify(data) });
+        try {
+          await stream.writeSSE({ event, data: JSON.stringify(data) });
+        } catch (err) {
+          // The stream may have been aborted between the `aborted` check and
+          // the write. Log the failure but never re-throw — we're already
+          // inside the error-handling path most of the time.
+          log.warn("fix-route: failed to write SSE event", {
+            event,
+            reason: err instanceof Error ? err.name : "unknown",
+          });
+        }
       };
 
       const onProgress = (event: FixProgress) => {
@@ -61,36 +69,52 @@ export function createFixRoutes(options?: FixRouteOptions) {
         void sendEvent("progress", event);
       };
 
-      let secrets: ResolvedSecrets;
+      const failGeneric = async (
+        stage: string,
+        err: unknown,
+        publicMessage: string,
+      ) => {
+        // Server-side: log the full detail (with secrets redacted) so
+        // operators can debug. Client-side: emit only the public message.
+        log.error(`fix-route: ${stage}`, {
+          projectId: request.projectId,
+          traceId: request.traceId,
+          mode: request.mode,
+          provider: request.llm.provider,
+          error: redactErrorForLog(err, secretSet()),
+        });
+        await sendEvent("error", { message: publicMessage });
+        await sendEvent("done", { ok: false });
+      };
+
+      // Capture the secret values after resolution so we can redact them
+      // from any error detail we log, belt-and-suspenders style. The set is
+      // seeded empty and populated once resolution succeeds.
+      let resolvedSecrets: ResolvedSecrets | null = null;
+      const secretSet = () => collectSecretStrings(resolvedSecrets);
+
       try {
-        secrets = await resolveSecrets(request);
-      } catch {
-        // Resolver threw. Never echo its message — it may describe which
-        // lookup failed, which leaks the existence of specific IDs.
-        await sendEvent("error", { message: "secret resolution failed" });
-        await sendEvent("done", { ok: false });
+        resolvedSecrets = await resolveSecrets(request);
+      } catch (err) {
+        await failGeneric("resolver threw", err, "secret resolution failed");
         return;
       }
-      if (!secrets.llmApiKey) {
-        // Generic error: never reveal whether llmKey vs gitToken was the
-        // missing piece (parent invariant #1 — no ID-existence leaks).
-        await sendEvent("error", { message: "secret resolution failed" });
-        await sendEvent("done", { ok: false });
+      if (!resolvedSecrets.llmApiKey) {
+        await failGeneric("resolver returned null llmApiKey", null, "secret resolution failed");
         return;
       }
-      if (request.source.kind === "git" && !secrets.gitToken) {
-        await sendEvent("error", { message: "secret resolution failed" });
-        await sendEvent("done", { ok: false });
+      if (request.source.kind === "git" && !resolvedSecrets.gitToken) {
+        await failGeneric("resolver returned null gitToken", null, "secret resolution failed");
         return;
       }
 
       const fixOptions: FixOptions = {
         traceId: request.traceId,
         collectorUrl,
-        source: buildEngineSource(request, secrets),
+        source: buildEngineSource(request, resolvedSecrets),
         llm: {
           provider: request.llm.provider,
-          apiKey: secrets.llmApiKey,
+          apiKey: resolvedSecrets.llmApiKey,
           ...(request.llm.model !== undefined ? { model: request.llm.model } : {}),
           ...(request.llm.maxTokens !== undefined ? { maxTokens: request.llm.maxTokens } : {}),
           ...(request.llm.temperature !== undefined ? { temperature: request.llm.temperature } : {}),
@@ -113,11 +137,8 @@ export function createFixRoutes(options?: FixRouteOptions) {
           parentSha: result.parentSha,
         });
         await sendEvent("done", { ok: true });
-      } catch {
-        // T5 will expand error handling and logging. T3 keeps it minimal but
-        // already satisfies invariant #1: never echo caught error content.
-        await sendEvent("error", { message: "fix-engine failed" });
-        await sendEvent("done", { ok: false });
+      } catch (err) {
+        await failGeneric("engine threw", err, "fix-engine failed");
       }
     });
   });
@@ -125,10 +146,7 @@ export function createFixRoutes(options?: FixRouteOptions) {
   return app;
 }
 
-/**
- * Injection seam for tests (and for T4's secret resolver). The runtime default
- * calls the real `@pathlight/fix` engine.
- */
+/** Injection seams for tests and production wiring. */
 export interface FixRouteOptions {
   runFix?: (options: FixOptions) => Promise<Awaited<ReturnType<typeof fix>>>;
   /**
@@ -141,6 +159,11 @@ export interface FixRouteOptions {
    * composition. Real deployments use `secretResolver`.
    */
   resolveSecrets?: (request: FixRequest) => Promise<ResolvedSecrets>;
+  /**
+   * Server-side log sink. The route logs full error detail here while emitting
+   * sanitized messages to the SSE stream. Default: structured console logger.
+   */
+  logger?: Logger;
 }
 
 export interface ResolvedSecrets {
@@ -148,6 +171,16 @@ export interface ResolvedSecrets {
   /** Present only when source.kind === "git"; undefined for path sources. */
   gitToken?: string;
 }
+
+export interface Logger {
+  error: (message: string, detail?: Record<string, unknown>) => void;
+  warn: (message: string, detail?: Record<string, unknown>) => void;
+}
+
+const defaultLogger: Logger = {
+  error: (message, detail) => console.error(`[fix] ${message}`, detail ?? {}),
+  warn: (message, detail) => console.warn(`[fix] ${message}`, detail ?? {}),
+};
 
 async function resolveRequestSecrets(
   request: FixRequest,
@@ -187,4 +220,43 @@ function computeCollectorUrl(requestUrl: string): string {
   } catch {
     return "http://localhost:4100";
   }
+}
+
+/**
+ * Turn any thrown value into something structured-log-safe. Drops the stack
+ * (which upstream libs sometimes embed keys or token material in when they
+ * include request payloads) and redacts every known secret string.
+ */
+function redactErrorForLog(err: unknown, secrets: Set<string>): Record<string, unknown> {
+  if (err === null || err === undefined) return { kind: "none" };
+  if (err instanceof Error) {
+    return {
+      kind: "error",
+      name: err.name,
+      message: redactString(err.message, secrets),
+    };
+  }
+  if (typeof err === "string") {
+    return { kind: "string", message: redactString(err, secrets) };
+  }
+  return { kind: "unknown", typeOf: typeof err };
+}
+
+function redactString(input: string, secrets: Set<string>): string {
+  let out = input;
+  for (const secret of secrets) {
+    if (!secret) continue;
+    // Escape regex metas so secret values containing `.` or `+` don't break.
+    const escaped = secret.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    out = out.replace(new RegExp(escaped, "g"), "[REDACTED]");
+  }
+  return out;
+}
+
+function collectSecretStrings(secrets: ResolvedSecrets | null): Set<string> {
+  const out = new Set<string>();
+  if (!secrets) return out;
+  if (secrets.llmApiKey) out.add(secrets.llmApiKey);
+  if (secrets.gitToken) out.add(secrets.gitToken);
+  return out;
 }
