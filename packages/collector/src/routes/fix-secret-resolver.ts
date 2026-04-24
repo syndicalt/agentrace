@@ -27,10 +27,10 @@ export interface SecretResolver {
  *
  * Returns `null` when the env var is missing or empty. Never reads any
  * hardcoded key material. Not intended for production — the production
- * resolver is provided by #48's libsodium-backed store.
- *
- * TODO(#48): wire the P4 libsodium-backed resolver here. Swap this stub for
- * the P4 implementation in the follow-up PR that merges after #48 lands.
+ * resolver is `createKeyStoreSecretResolver` from `@pathlight/keys`,
+ * wired in `router.ts` whenever a `KeyStore` is configured (i.e.
+ * `PATHLIGHT_SEAL_KEY` is set). This stub remains for tests and for
+ * deployments that want to drive the engine without standing up BYOK.
  */
 export function createEnvSecretResolver(): SecretResolver {
   return {

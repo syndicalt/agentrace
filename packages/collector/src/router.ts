@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { Db } from "@pathlight/db";
-import type { KeyStore } from "@pathlight/keys";
+import { createKeyStoreSecretResolver, type KeyStore } from "@pathlight/keys";
 import { createTraceRoutes } from "./routes/traces.js";
 import { createSpanRoutes } from "./routes/spans.js";
 import { createProjectRoutes } from "./routes/projects.js";
@@ -33,7 +33,17 @@ export async function createRouter(ctx: RouterContext) {
   app.route("/v1/breakpoints", createBreakpointRoutes());
   app.route("/v1/replay", createReplayRoutes());
   app.route("/v1/otlp", createOtlpRoutes(ctx.db));
-  app.route("/v1/fix", createFixRoutes());
+  // Wire the fix route to the BYOK key store when one is configured.
+  // Without this, /v1/fix falls back to the env-only resolver and the
+  // dashboard's key picker is decorative — the engine can't see the
+  // sealed keys it just selected. (Closes the TODO(#48) in
+  // fix-secret-resolver.ts.)
+  app.route(
+    "/v1/fix",
+    createFixRoutes(
+      ctx.keyStore ? { secretResolver: createKeyStoreSecretResolver(ctx.keyStore) } : undefined,
+    ),
+  );
   app.route("/v1/fix-apply", createFixApplyRoutes());
 
   // BYOK key management — nested under /v1/projects/:id/keys. Only
