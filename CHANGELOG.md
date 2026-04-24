@@ -2,6 +2,40 @@
 
 All notable changes to Pathlight. Dates are release days, not merge days.
 
+## 0.3.1 — 2026-04-24
+
+Patch release. Fixes the `pathlight fix` CLI happy-path and the
+dashboard's "Fix this" flow. Affects every BYOK fix-engine user.
+
+Published to npm: `@pathlight/fix`, `@pathlight/cli`.
+Republished docker images on GHCR: `pathlight-collector`, `pathlight-web`.
+Not republished: `@pathlight/sdk`, `@pathlight/eval`, `@pathlight/openclaw`,
+`pathlight` (PyPI) — none of these were affected.
+
+### Fixed
+
+- **`@pathlight/fix`** ([#56](https://github.com/syndicalt/pathlight/issues/56)) —
+  `inferFilesFromSpans` had a no-op `isAbsolute(x) ? x : x` conditional that
+  silently dropped every relative `_source.file`. The CLI was calling the LLM
+  with `fileCount: 0` and producing generic "please share the file" replies
+  instead of real diffs. Now joins relative paths against `sourceRoot`.
+- **Collector `/v1/fix`** ([#57](https://github.com/syndicalt/pathlight/issues/57)) —
+  the route was wired to the env-only test resolver and never to the BYOK
+  key store. Selecting a sealed key in the dashboard always failed with
+  `secret resolution failed`. Now uses `createKeyStoreSecretResolver` when
+  `PATHLIGHT_SEAL_KEY` is set.
+- **Dashboard Fix dialog** ([#58](https://github.com/syndicalt/pathlight/issues/58)) —
+  read `projectId` from `trace.metadata.projectId` (a path nothing populates)
+  instead of the top-level `trace.projectId`. The BYOK key picker never
+  rendered because the form fell back to the no-projectId code path. Fixed.
+- **Dashboard FixStream** ([#59](https://github.com/syndicalt/pathlight/issues/59)) —
+  inline `onResult`/`onFail` closures in deps caused the SSE effect to
+  abort the in-flight fix on every parent re-render. In dev (StrictMode)
+  every submission failed instantly with "signal is aborted without reason."
+  Moved callbacks behind refs and ignore unmount-driven aborts.
+- **`docker-compose.yml`** — added `PATHLIGHT_SEAL_KEY` env passthrough so
+  `/settings/keys` actually mounts in the docker quickstart path.
+
 ## 0.3.0 — 2026-04-24
 
 Published to npm: `@pathlight/sdk`, `@pathlight/eval`, `@pathlight/cli`,

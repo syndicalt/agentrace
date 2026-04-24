@@ -1,6 +1,6 @@
 {
   "name": "@pathlight/fix",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Code-fixing agent core for Pathlight — reads failing traces, proposes diffs via BYOK LLM providers.",
   "type": "module",
   "main": "./dist/index.js",
