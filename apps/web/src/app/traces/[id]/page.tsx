@@ -5,6 +5,8 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { fetchApi, patchApi } from "../../../lib/api";
 import { formatDuration, formatTokens } from "../../../lib/format";
+import { FixButton } from "../../../components/Fix/FixButton";
+import { FixDialog, type FixContext } from "../../../components/Fix/FixDialog";
 
 interface Trace {
   id: string;
@@ -101,11 +103,12 @@ function JsonBlock({ data, label }: { data: unknown; label: string }) {
   );
 }
 
-function SpanInspector({ span, onClose }: { span: Span; onClose: () => void }) {
+function SpanInspector({ span, onClose, onFix }: { span: Span; onClose: () => void; onFix: () => void }) {
   const style = TYPE_STYLES[span.type] || TYPE_STYLES.custom;
   const meta = parseJson(span.metadata) as Record<string, unknown> | null;
   const source = meta?._source as { file?: string; line?: number; func?: string } | undefined;
   const isLlm = span.type === "llm";
+  const canFix = spanHasIssues(span);
 
   return (
     <aside className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden flex flex-col">
@@ -122,11 +125,14 @@ function SpanInspector({ span, onClose }: { span: Span; onClose: () => void }) {
         {(span.inputTokens || span.outputTokens) ? (
           <span className="text-xs text-zinc-500 font-mono shrink-0">{span.inputTokens || 0}/{span.outputTokens || 0} tok</span>
         ) : null}
-        <button onClick={onClose} className="ml-auto text-zinc-500 hover:text-zinc-300 shrink-0" aria-label="Close inspector">
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+        <div className="ml-auto flex items-center gap-2 shrink-0">
+          <FixButton visible={canFix} onClick={onFix} />
+          <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300" aria-label="Close inspector">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div className="px-5 py-4 space-y-4 overflow-y-auto">
@@ -398,6 +404,7 @@ export default function TraceDetailPage() {
   const [events, setEvents] = useState<SpanEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSpan, setSelectedSpan] = useState<Span | null>(null);
+  const [fixContext, setFixContext] = useState<FixContext | null>(null);
   const inspectorRef = useRef<HTMLDivElement | null>(null);
 
   // Close the inspector with Escape.
@@ -579,11 +586,27 @@ export default function TraceDetailPage() {
 
           {selectedSpan && (
             <div ref={inspectorRef} className="lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-2rem)]">
-              <SpanInspector span={selectedSpan} onClose={() => setSelectedSpan(null)} />
+              <SpanInspector
+                span={selectedSpan}
+                onClose={() => setSelectedSpan(null)}
+                onFix={() =>
+                  setFixContext({
+                    traceId: trace.id,
+                    spanId: selectedSpan.id,
+                    projectId: (parseJson(trace.metadata) as { projectId?: string } | null)?.projectId ?? null,
+                  })
+                }
+              />
             </div>
           )}
         </div>
       </div>
+
+      <FixDialog
+        open={!!fixContext}
+        context={fixContext}
+        onClose={() => setFixContext(null)}
+      />
     </div>
   );
 }
