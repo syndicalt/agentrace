@@ -4,6 +4,7 @@ import { PluginState } from "./state.js";
 import { registerTraceEnvelopeHooks } from "./hooks/trace-envelope.js";
 import { registerLlmHooks } from "./hooks/llm.js";
 import { registerToolHooks } from "./hooks/tool.js";
+import { registerDelegationHooks } from "./hooks/delegation.js";
 
 export interface PathlightOpenClawOptions {
   baseUrl?: string;
@@ -38,6 +39,7 @@ export default definePluginEntry({
     registerTraceEnvelopeHooks(api, state);
     registerLlmHooks(api, state);
     registerToolHooks(api, state);
+    registerDelegationHooks(api, state);
   },
 });
 
