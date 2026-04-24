@@ -593,7 +593,7 @@ export default function TraceDetailPage() {
                   setFixContext({
                     traceId: trace.id,
                     spanId: selectedSpan.id,
-                    projectId: (parseJson(trace.metadata) as { projectId?: string } | null)?.projectId ?? null,
+                    projectId: trace.projectId ?? null,
                   })
                 }
               />
