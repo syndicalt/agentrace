@@ -2,6 +2,26 @@
 
 All notable changes to Pathlight. Dates are release days, not merge days.
 
+## 0.3.2 — 2026-04-24
+
+Documentation-only patch. No code or behavior changes — republished
+solely so the `npmjs.com` README pages reflect the 0.3.x feature set.
+
+Published to npm: `@pathlight/fix`, `@pathlight/cli`.
+Not republished: anything else.
+
+### Changed (docs)
+
+- `@pathlight/cli` README now documents `pathlight fix` end-to-end
+  alongside `pathlight share`. The 0.3.0 / 0.3.1 README only covered
+  `share`, so anyone landing on npmjs.com couldn't discover the
+  fix subcommand.
+- `@pathlight/fix` README drops the stale "Roadmap (P3/P4/P5)"
+  section pointing at issues that all shipped with 0.3.0. Adds
+  companion-surface pointers (CLI, dashboard) and a
+  `scripts/seed-screenshots.mjs` "try it without writing your own
+  bug" walkthrough.
+
 ## 0.3.1 — 2026-04-24
 
 Patch release. Fixes the `pathlight fix` CLI happy-path and the
